@@ -1,12 +1,12 @@
 # load libraries
-library(readr)
 library(ggplot2)
+library(dplyr)
 
 # set-up params
 dataFolder <- 'receivedData_DO_NOT_EDIT/'
 
 # import metadata dataset
-buildingMetadata <- read_csv(paste0(dataFolder, 'building_metadata.csv'))
+buildingMetadata <- read.csv(paste0(dataFolder, 'building_metadata.csv'))
 
 # check uniqueness of id
 length(unique(buildingMetadata$building_id))
@@ -30,7 +30,7 @@ ggplot(buildingMetadata, aes(x = year_built, y = square_feet)) +
 # - could interpolate from energy usage as well, but not if that will be the predictor
 
 # import meter readings dataset
-buildingMeterReadings <- read_csv(paste0(dataFolder, 'building_meter_readings.csv'))
+buildingMeterReadings <- read.csv(paste0(dataFolder, 'building_meter_readings.csv'))
 
 # check uniqueness of id, and if all is contained on the metadata
 length(unique(buildingMeterReadings$building_id))
@@ -41,9 +41,17 @@ sum(complete.cases(buildingMeterReadings)) / nrow(buildingMeterReadings)
 
 summary(buildingMeterReadings)
 
-unique(buildingMeterReadings[, c(1,2)])
+# check if multiple meters are metering the same thing on a single building
+uniqueBuildingID_meter <- unique(buildingMeterReadings[, c(1,2)])
 
+BuildingID_multipleMeters <- uniqueBuildingID_meter %>%
+  group_by(building_id) %>%
+  tally() %>%
+  filter(n != 1)
 
+# by visually exploring the table below it seems multiple meters are measuring different things
+# I will assume they are never in series
+buildingMeterReadings[buildingMeterReadings$building_id %in% BuildingID_multipleMeters$building_id,]
 
 # import weather dataset
 weatherData <- read.csv(paste0(dataFolder, 'weather_data.csv'))
@@ -52,5 +60,4 @@ weatherData <- read.csv(paste0(dataFolder, 'weather_data.csv'))
 length(unique(weatherData$site_id))
 sum(unique(weatherData$site_id) %in% buildingMetadata$site_id)
 sum(unique(buildingMetadata$site_id) %in% unique(weatherData$site_id))
-
 # now I know that building_id maps to metadata, site_id maps to weather data
