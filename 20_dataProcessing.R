@@ -4,19 +4,19 @@
 library(dplyr)
 
 # reload objects, if necessary
-if(!exists('dataFolder')) {
+if (!exists('dataFolder')) {
   dataFolder <- 'receivedData_DO_NOT_EDIT/'
 }
 
-if(!exists('buildingMetadata')) {
+if (!exists('buildingMetadata')) {
   buildingMetadata <- read.csv(paste0(dataFolder, 'building_metadata.csv'))
 }
 
-if(!exists('buildingMeterReadings')) {
+if (!exists('buildingMeterReadings')) {
   buildingMeterReadings <- read.csv(paste0(dataFolder, 'building_meter_readings.csv'))
 }
 
-if(!exists('weatherData')) {
+if (!exists('weatherData')) {
   weatherData <- read.csv(paste0(dataFolder, 'weather_data.csv'))
 }
 
@@ -24,7 +24,7 @@ if(!exists('weatherData')) {
 # assumption: meters are installed in parallel
 buildingMeterReadingsConsolidated <- buildingMeterReadings %>%
   group_by(building_id, timestamp) %>%
-  summarise(meter_multi_reading = sum(meter_reading)) %>%
+  summarise(meter_multi_reading = sum(meter_reading), .groups = 'drop') %>%
   ungroup()
 
 # join building metadata
