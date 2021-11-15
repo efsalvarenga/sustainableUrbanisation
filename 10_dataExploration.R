@@ -53,5 +53,11 @@ BuildingID_multipleMeters <- uniqueBuildingID_meter %>%
 # I will assume they are never in series
 buildingMeterReadings[buildingMeterReadings$building_id %in% BuildingID_multipleMeters$building_id,]
 
-
+# import weather dataset
 weatherData <- read.csv(paste0(dataFolder, 'weather_data.csv'))
+
+# check uniqueness of id, and if all is contained on the metadata
+length(unique(weatherData$site_id))
+sum(unique(weatherData$site_id) %in% buildingMetadata$site_id)
+sum(unique(buildingMetadata$site_id) %in% unique(weatherData$site_id))
+# now I know that building_id maps to metadata, site_id maps to weather data
