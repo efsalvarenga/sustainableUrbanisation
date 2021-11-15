@@ -1,3 +1,5 @@
+# script will not have exploration as it might be called from other scripts later
+
 # load libraries
 library(dplyr)
 
@@ -18,6 +20,20 @@ if(!exists('weatherData')) {
   weatherData <- read.csv(paste0(dataFolder, 'weather_data.csv'))
 }
 
+# consolidating meter readings from multiple meter on same building
+# assumption: meters are installed in parallel
 buildingMeterReadingsConsolidated <- buildingMeterReadings %>%
   group_by(building_id, timestamp) %>%
-  summarise(meter_multi_reading = sum(meter_reading))
+  summarise(meter_multi_reading = sum(meter_reading)) %>%
+  ungroup()
+
+# join building metadata
+buildingMeterReadingsConsolidatedMetadata <- left_join(buildingMeterReadingsConsolidated,
+                                                       buildingMetadata,
+                                                       by = 'building_id')
+
+# join weather data, checking matching cols
+matchCols <- colnames(buildingMeterReadingsConsolidatedMetadata)[colnames(buildingMeterReadingsConsolidatedMetadata) %in% colnames(weatherData)]
+mainDf <- left_join(buildingMeterReadingsConsolidatedMetadata, weatherData, by = matchCols)
+
+
