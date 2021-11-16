@@ -25,8 +25,7 @@ if (!exists('weatherData')) {
 # assumption: meters are installed in parallel
 buildingMeterReadingsConsolidated <- buildingMeterReadings %>%
   group_by(building_id, timestamp) %>%
-  summarise(meter_multi_reading = sum(meter_reading), .groups = 'drop') %>%
-  ungroup()
+  summarise(meter_multi_reading = sum(meter_reading), .groups = 'drop')
 
 # join building metadata
 buildingMeterReadingsConsolidatedMetadata <- left_join(buildingMeterReadingsConsolidated,
@@ -36,5 +35,6 @@ buildingMeterReadingsConsolidatedMetadata <- left_join(buildingMeterReadingsCons
 # join weather data, checking matching cols
 matchCols <- colnames(buildingMeterReadingsConsolidatedMetadata)[colnames(buildingMeterReadingsConsolidatedMetadata) %in% colnames(weatherData)]
 mainDf <- left_join(buildingMeterReadingsConsolidatedMetadata, weatherData, by = matchCols)
+mainDf$timestamp <- as.POSIXct(mainDf$timestamp)
 
 

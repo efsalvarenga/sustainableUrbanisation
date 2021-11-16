@@ -1,6 +1,7 @@
 # load libraries
 library(ggplot2)
 library(dplyr)
+library(tidyr)
 
 # set-up params
 dataFolder <- 'receivedData_DO_NOT_EDIT/'
@@ -54,11 +55,36 @@ BuildingID_multipleMeters <- uniqueBuildingID_meter %>%
 # I will assume they are never in series
 buildingMeterReadings[buildingMeterReadings$building_id %in% BuildingID_multipleMeters$building_id,]
 
+# consolidating meter readings on same building
+buildingMeterReadingsConsolidated <- buildingMeterReadings %>%
+  group_by(building_id, timestamp) %>%
+  summarise(meter_multi_reading = sum(meter_reading), .groups = 'drop') %>%
+  mutate(timestamp = as.POSIXct(timestamp))
+
+# plot of sample of buildings
+buildingMeterReadingsConsolidated %>%
+  filter(building_id %in% 1:16) %>%
+  ggplot(aes(x = timestamp, y = meter_multi_reading)) +
+  geom_line(aes(colour = building_id)) +
+  facet_wrap(~building_id, scales = 'free') +
+  theme(legend.title = element_blank())
+
 # import weather dataset
 weatherData <- read.csv(paste0(dataFolder, 'weather_data.csv'))
+weatherData$timestamp <- as.POSIXct(weatherData$timestamp)
 
 # check uniqueness of id, and if all is contained on the metadata
 length(unique(weatherData$site_id))
 sum(unique(weatherData$site_id) %in% buildingMetadata$site_id)
 sum(unique(buildingMetadata$site_id) %in% unique(weatherData$site_id))
 # now I know that building_id maps to metadata, site_id maps to weather data
+
+weatherDataColsToPivot <- colnames(weatherData)[!colnames(weatherData) %in% c('site_id', 'timestamp')]
+weatherDataLong <- weatherData %>%
+  pivot_longer(all_of(weatherDataColsToPivot),
+               names_to = 'variable',
+               values_to = 'value')
+
+
+
+
