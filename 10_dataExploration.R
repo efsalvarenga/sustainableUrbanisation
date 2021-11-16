@@ -23,6 +23,7 @@ ggplot(buildingMetadata, aes(x = year_built, y = square_feet)) +
   geom_point(aes(colour = floor_count)) +
   facet_wrap(~primary_use)
 # many missing datapoints, as stated above
+# unbalanced dataset
 
 # ideas for imputation (if required)
 # - bin square_feet per primary_use, interpolate floor year_built

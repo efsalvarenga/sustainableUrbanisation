@@ -14,6 +14,7 @@ if (!exists('buildingMetadata')) {
 
 if (!exists('buildingMeterReadings')) {
   buildingMeterReadings <- read.csv(paste0(dataFolder, 'building_meter_readings.csv'))
+  buildingMeterReadings$timestamp <- as.POSIXct(buildingMeterReadings$timestamp)
 }
 
 if (!exists('weatherData')) {
