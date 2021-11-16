@@ -53,6 +53,19 @@ BuildingID_multipleMeters <- uniqueBuildingID_meter %>%
 # I will assume they are never in series
 buildingMeterReadings[buildingMeterReadings$building_id %in% BuildingID_multipleMeters$building_id,]
 
+# consolidating meter readings on same building
+buildingMeterReadingsConsolidated <- buildingMeterReadings %>%
+  group_by(building_id, timestamp) %>%
+  summarise(meter_multi_reading = sum(meter_reading), .groups = 'drop') %>%
+  mutate(timestamp = as.POSIXct(timestamp))
+
+# plot of sample of buildings
+buildingMeterReadingsConsolidated %>%
+  filter(building_id %in% 1:16) %>%
+  ggplot(aes(x = timestamp, y = meter_multi_reading)) +
+  geom_line(aes(colour = building_id)) +
+  facet_wrap(~building_id, scales = 'free')
+
 # import weather dataset
 weatherData <- read.csv(paste0(dataFolder, 'weather_data.csv'))
 
