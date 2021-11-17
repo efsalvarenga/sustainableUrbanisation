@@ -2,6 +2,7 @@
 
 # load libraries
 library(dplyr)
+library(randomForest)
 
 # reload objects, if necessary
 if (!exists('dataFolder')) {
@@ -10,6 +11,7 @@ if (!exists('dataFolder')) {
 
 if (!exists('buildingMetadata')) {
   buildingMetadata <- read.csv(paste0(dataFolder, 'building_metadata.csv'))
+  buildingMetadata <- na.roughfix(buildingMetadata) # implementing a very rough fix
 }
 
 if (!exists('buildingMeterReadings')) {
@@ -19,6 +21,8 @@ if (!exists('buildingMeterReadings')) {
 
 if (!exists('weatherData')) {
   weatherData <- read.csv(paste0(dataFolder, 'weather_data.csv'))
+  weatherData <- na.roughfix(weatherData) # implementing a very rough fix
+  weatherData$timestamp <- as.POSIXct(weatherData$timestamp)
 }
 
 # consolidating meter readings from multiple meter on same building
