@@ -1,5 +1,5 @@
 ---
-title: "Sustainable Urbanisation: Building Energy Consumption Forecast"
+title: "Sustainable Urbanisation:  Building Energy Consumption Forecast"
 author: "Estevao Alvarenga"
 date: "16/11/2021"
 output: ioslides_presentation
@@ -13,17 +13,31 @@ library(ggplot2)
 library(dplyr)
 ```
 
+# Agenda
+
+1. Introduction
+2. Data exploration
+3. Modelling process
+4. Project ways of working
+5. Further service opportunities
+
 ## Introduction
 
-The project outlined here describes the high level design of a new digital service on the sustainable urbanisation business.
+The project outlined here describes the high level project plan for a new digital service on the sustainable urbanisation business.
 
 The service predicts short-term (up to 7 days) energy demand for industrial business, based on the building characteristics, usage, and weather forecasts.
 
 The service will be consumed by our customers through an API. We might also consider implementing a web-based UI, depending on customer feedback.
 
+
+# Data exploration
+
+1. Metadata, meter and weather data
+2. Imputation and augmentation
+
 ## Data exploration: metadata
 
-```{r metadataExpl, eval=FALSE, include=FALSE}
+```{r metadataExpl}
 dataFolder <- 'receivedData_DO_NOT_EDIT/'
 buildingMetadata <- read.csv(paste0(dataFolder, 'building_metadata.csv'))
 
@@ -34,7 +48,7 @@ ggplot(buildingMetadata, aes(x = year_built, y = square_feet)) +
 
 Notes:
 
-- Missing data points, either a flexible model or imputation will be required
+- Missing data points: either a flexible model or imputation will be required
 - Unbalanced dataset
 
 Possible imputation:
@@ -45,7 +59,7 @@ Possible imputation:
 
 ## Data exploration: meter readings
 
-```{r meterReadExpl, eval=FALSE, include=FALSE}
+```{r meterReadExpl}
 buildingMeterReadings <- read.csv(paste0(dataFolder, 'building_meter_readings.csv'))
 
 # consolidating meter readings on same building
@@ -56,30 +70,46 @@ buildingMeterReadingsConsolidated <- buildingMeterReadings %>%
 
 # plot of sample of buildings
 buildingMeterReadingsConsolidated %>%
-  filter(building_id %in% 1:16) %>%
+  filter(building_id %in% c(1, 11, 421, 653, 903, 1210),
+         timestamp > as.POSIXct('2016-10-01')) %>%
   ggplot(aes(x = timestamp, y = meter_multi_reading)) +
   geom_line(aes(colour = building_id)) +
   facet_wrap(~building_id, scales = 'free') +
-  theme(legend.title = element_blank())
+  theme(legend.position = 'none')
 ```
 
 Notes:
 
-- No missing data on current dataset
-- However we still need to protect against missing data for production
-- Scales varies significantly, a model that can operate on these conditions is required
+- No missing data on current dataset, however we still need to protect against missing data for production
+- Scales varies significantly: a model that can operate on these conditions is required
 
 Possible augmentation and imputation:
 
 - Past consumption of own building and aggregate neighbourhood (sites) should be evaluated as it could be a good predictor
 - Use [STL decomposition](https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/stl) and input using the interpolation of the seasonal + trend signals
-- Use ARIMA to interpolate values (possibly leveraging a [Kalman Filter (KF) approach](https://stats.stackexchange.com/questions/104565/how-to-use-auto-arima-to-impute-missing-values))
+- Use ARIMA to interpolate values (possibly leveraging [Kalman Filter (KF) approach](https://stats.stackexchange.com/questions/104565/how-to-use-auto-arima-to-impute-missing-values))
 
 ## Data exploration: weather data
 
-```{r weatherExpl, eval=FALSE, include=FALSE}
+```{r weatherExpl}
 weatherData <- read.csv(paste0(dataFolder, 'weather_data.csv'))
 weatherData$timestamp <- as.POSIXct(weatherData$timestamp)
+
+# pivot data
+weatherDataColsToPivot <- colnames(weatherData)[!colnames(weatherData) %in% c('site_id', 'timestamp')]
+weatherDataLong <- weatherData %>%
+  pivot_longer(all_of(weatherDataColsToPivot),
+               names_to = 'variable',
+               values_to = 'value')
+
+# plot
+weatherDataLong %>%
+  filter(site_id %in% c(1, 3, 7, 13),
+         timestamp > as.POSIXct('2016-10-01')) %>%
+  mutate(site_id = as.factor(site_id)) %>%
+  ggplot(aes(x = timestamp, y = value)) +
+  geom_line(aes(colour = site_id)) +
+  facet_wrap(~variable, scales = 'free')
 ```
 
 Notes:
@@ -90,12 +120,18 @@ Possible augmentation and data imputation:
 
 - Generally weather data can be augmented with engineering variables, lags and moving averages for increased prediction power
 - Similar to the meter data, STL decomposition or ARIMA + KF could be used for imputation
-- Alternatively, if we had x,y coordinates for the site_id's we could also perform krigging with neighbour sites
+- Alternatively, if we have x,y coordinates for the site_id's we could also perform krigging with neighbour sites
 
 
-## Data pre-processing for modelling
+# Modelling process
+
+1. Data pre-processing
+2. Model development
+
+## Data pre-processing
 
 1. All variables must be converted into their natural types (integer, numeric, categorical, timestamp)
+1. Outliers must be detected and treated
 2. Imputation is performed - good practice for production applications
 3. Variable engineering is performed (such as new calculated variables) in consultation with subject matter experts (SME)
 4. Datasets are joined, based on common ids
@@ -106,13 +142,22 @@ All steps substantiated with visualisations
 ## Model development
 
 5. Train/test split is performed (walk-forward cross validation)
+5. Due to size of dataset and possible memory constrains it would be economical to evaluate simpler model structures (e.g. polynomials) with full dataset compared with more complex structures being built on a sample of the dataset
+6. Given there will be more data coming during the project timeline, setting aside a full-blind dataset is not required
 6. Variable importance is assessed (e.g. Boruta algorithm)
 7. Model development takes into account out-of-sample (OOS) metrics for benchmarking
 8. After model is selected, investigation plots are built (e.g. partial dependence plots, variable importance, etc.) and these are discussed with SME
 9. Model OOS metrics threshold is defined with SME, which will be used for continued retraining and evaluation of automated future model quality
 
 
-## Proposed delivery framework
+# Ways of working
+
+1. Delivery framework
+2. Timelines
+3. Architecture & controls
+4. Operations pipeline
+
+## Delivery framework
 
 - Agile DevOps, minimum 50% allocation for DevOps team members
 - DevOps Team with 3 - 4 members, 4 eyes principle on each work package
@@ -122,30 +167,35 @@ All steps substantiated with visualisations
 - When integration with external parties is required, those will be managed through SEI's CERT Resilience Management Model - [External Dependencies](https://resources.sei.cmu.edu/library/asset-view.cfm?assetid=514765)
 
 
-# Proposed timeframe
+## Timelines
 
 - Sprints aiming at minor releases each sprint.
 - First sprint will heavily require business stakeholders and architecture for a design workshop that will follow a layered approach: business requirements followed by translation into high level design and controls' definition (Ops & IRM)
 - Aim to deliver working economical solution in 6 + 2 sprints: by sprint 4 timelines will be re-negotiated with steering committee
 
-## Proposed solution architecture & controls
+## Solution architecture & controls
 
-- Cloud tool: Azure Machine Learning (AzureML) - the bank currently has its data on Azure, and AzureML offers a simple data science solution with productisation features
+- Cloud tool: Azure Machine Learning (AzureML), which offers a simple data science solution with productisation features
 - Environments: Development, Test and Production
+- CICD pipelines maintained through GitHub actions
 - Data workflow: Data will be sourced appropriately and stored as dataset connections on Azure, without effective interim storage (apart from models)
 - Ops & IRM controls will be automatically monitored
 
 
-## Proposed solution (CICD) pipeline
+## Operations (CICD) pipeline [1 of 2]
 
 - Data tests will be defined and implemented (i.e. pipeline only advances if previous tests have been successful)
 - Chosen model metrics will be compared with defined threshold, as a final test
 - Successful models will be converted into artefact for deployment
 - Deployed artefacts will be exposed as endpoints on AzureML in the test environment, enabling the service to be used as an API (for test)
+
+
+## Operations (CICD) pipeline [2 of 2]
+
 - Service is tested with several test datasets (engineered to break functionalities) in an automated fashion, and results are collected
 - DevOps team member will look at new model test results and compare with current production model results, optionally promotion of new model to production environment will happen.
 - Model decay will be monitored and DevOps team will be notified when a significant improvement can be achieved by promoting a new model from test to production
-- When model decay can not be treated with an available model on the test environment the DevOps team will also be notified to act
+- When model decay can not be treated with an available model on the test environment,  DevOps team will be notified to act
 
 
 ## Further service opportunities
