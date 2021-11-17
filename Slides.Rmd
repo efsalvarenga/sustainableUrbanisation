@@ -1,5 +1,5 @@
 ---
-title: "Slides prepared for ABN"
+title: "Sustainable Urbanisation: Building Energy Consumption Forecast"
 author: "Estevao Alvarenga"
 date: "16/11/2021"
 output: ioslides_presentation
@@ -17,13 +17,13 @@ library(dplyr)
 
 The project outlined here describes the high level design of a new digital service on the sustainable urbanisation business.
 
-The service predicts short-term (up to 7 days) energy demand for industrial business, based on the building characteristics, inclusing usage, and weather forecasts.
+The service predicts short-term (up to 7 days) energy demand for industrial business, based on the building characteristics, usage, and weather forecasts.
 
 The service will be consumed by our customers through an API. We might also consider implementing a web-based UI, depending on customer feedback.
 
 ## Data exploration: metadata
 
-```{r metadataExpl}
+```{r metadataExpl, eval=FALSE, include=FALSE}
 dataFolder <- 'receivedData_DO_NOT_EDIT/'
 buildingMetadata <- read.csv(paste0(dataFolder, 'building_metadata.csv'))
 
@@ -33,17 +33,19 @@ ggplot(buildingMetadata, aes(x = year_built, y = square_feet)) +
 ```
 
 Notes:
+
 - Missing data points, either a flexible model or imputation will be required
 - Unbalanced dataset
 
 Possible imputation:
+
 1. Bin square_feet per primary_use, interpolate floor year_built
 2. Bin square_feet and year_built per primary_use, interpolate floor_count
 3. Could interpolate from energy usage as well, but not if that will be the predictor
 
 ## Data exploration: meter readings
 
-```{r meterReadExpl}
+```{r meterReadExpl, eval=FALSE, include=FALSE}
 buildingMeterReadings <- read.csv(paste0(dataFolder, 'building_meter_readings.csv'))
 
 # consolidating meter readings on same building
@@ -62,69 +64,92 @@ buildingMeterReadingsConsolidated %>%
 ```
 
 Notes:
+
 - No missing data on current dataset
 - However we still need to protect against missing data for production
 - Scales varies significantly, a model that can operate on these conditions is required
 
-Possible augumentation and inputation:
-- Past consumption of own building and aggregate neigbourhood (sites) should be evaluated as it could be a good predictor
+Possible augmentation and imputation:
+
+- Past consumption of own building and aggregate neighbourhood (sites) should be evaluated as it could be a good predictor
 - Use [STL decomposition](https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/stl) and input using the interpolation of the seasonal + trend signals
 - Use ARIMA to interpolate values (possibly leveraging a [Kalman Filter (KF) approach](https://stats.stackexchange.com/questions/104565/how-to-use-auto-arima-to-impute-missing-values))
 
 ## Data exploration: weather data
 
-```{r weatherExpl}
+```{r weatherExpl, eval=FALSE, include=FALSE}
 weatherData <- read.csv(paste0(dataFolder, 'weather_data.csv'))
 weatherData$timestamp <- as.POSIXct(weatherData$timestamp)
 ```
 
 Notes:
+
 - Missing data points
 
 Possible augmentation and data imputation:
+
 - Generally weather data can be augmented with engineering variables, lags and moving averages for increased prediction power
 - Similar to the meter data, STL decomposition or ARIMA + KF could be used for imputation
 - Alternatively, if we had x,y coordinates for the site_id's we could also perform krigging with neighbour sites
 
 
-## Modelling process
-
-Data pre-processing (all steps substantiated with visualisations)
+## Data pre-processing for modelling
 
 1. All variables must be converted into their natural types (integer, numeric, categorical, timestamp)
 2. Imputation is performed - good practice for production applications
 3. Variable engineering is performed (such as new calculated variables) in consultation with subject matter experts (SME)
 4. Datasets are joined, based on common ids
 
-Model development
+All steps substantiated with visualisations
+
+
+## Model development
 
 5. Train/test split is performed (walk-forward cross validation)
 6. Variable importance is assessed (e.g. Boruta algorithm)
 7. Model development takes into account out-of-sample (OOS) metrics for benchmarking
-8. After model is selected, investigation plots are built (e.g. partial dependence plots, variable importance, etc) and these are discussed with SME
+8. After model is selected, investigation plots are built (e.g. partial dependence plots, variable importance, etc.) and these are discussed with SME
 9. Model OOS metrics threshold is defined with SME, which will be used for continued retraining and evaluation of automated future model quality
 
-## Productisation of solution
-- A team with the below skills will be formed (not necessarily one person per skill):
-   - Business / SME
-   - Data science
-   - MLOps (CICD pipelines)
-   - IT Architecture and Information Risk Management
-- Use Azure Machine Learning (AzureML) as the bank currently has its data on Azure and AzureML offers a simple data science solution with productisation features
-   - We will use a development, test and production environment
-- Data will be sourced appropriately and stored as dataset connections on Azure, without interim storage
-   - Since only models will be stored, information risk management controls can be simpler than general cases
-- The data process and model development process will be converted into a CICD pipeline:
-   - Data tests will be defined and implemented, so that the process only continues if previous tests have been successful
-   - Chosen model metrics will be compared with defined threshold, as a final test
-   - Successful models will be converted into artefact for deployment
+
+## Proposed delivery framework
+
+- Agile DevOps, minimum 50% allocation for DevOps team members
+- DevOps Team with 3 - 4 members, 4 eyes principle on each work package
+- Required DevOps team skills: Business/SME, Data Science, MLOps
+- Required support team skills: Scrum master/PM, IT Architecture and Information Risk Management (IRM)
+- Steering committee should have representatives of all above disciplines
+- When integration with external parties is required, those will be managed through SEI's CERT Resilience Management Model - [External Dependencies](https://resources.sei.cmu.edu/library/asset-view.cfm?assetid=514765)
+
+
+# Proposed timeframe
+
+- Sprints aiming at minor releases each sprint.
+- First sprint will heavily require business stakeholders and architecture for a design workshop that will follow a layered approach: business requirements followed by translation into high level design and controls' definition (Ops & IRM)
+- Aim to deliver working economical solution in 6 + 2 sprints: by sprint 4 timelines will be re-negotiated with steering committee
+
+## Proposed solution architecture & controls
+
+- Cloud tool: Azure Machine Learning (AzureML) - the bank currently has its data on Azure, and AzureML offers a simple data science solution with productisation features
+- Environments: Development, Test and Production
+- Data workflow: Data will be sourced appropriately and stored as dataset connections on Azure, without effective interim storage (apart from models)
+- Ops & IRM controls will be automatically monitored
+
+
+## Proposed solution (CICD) pipeline
+
+- Data tests will be defined and implemented (i.e. pipeline only advances if previous tests have been successful)
+- Chosen model metrics will be compared with defined threshold, as a final test
+- Successful models will be converted into artefact for deployment
 - Deployed artefacts will be exposed as endpoints on AzureML in the test environment, enabling the service to be used as an API (for test)
 - Service is tested with several test datasets (engineered to break functionalities) in an automated fashion, and results are collected
-   - Data scientist will look at test results and, if necessary, run manual tests
-   - When satisfied, the CICD pipeline is going to be manually engaged to move the current model to the production environment
-   
+- DevOps team member will look at new model test results and compare with current production model results, optionally promotion of new model to production environment will happen.
+- Model decay will be monitored and DevOps team will be notified when a significant improvement can be achieved by promoting a new model from test to production
+- When model decay can not be treated with an available model on the test environment the DevOps team will also be notified to act
+
+
 ## Further service opportunities
 
 - With enough data gathered, by accessing energy price data, the service could be extended to predict local energy price
-- Additonal short term service: With energy price prediction, the service could send signal to automatically dispatch extra cooling/heating, for oprimising the total energy cost
+- Additional short term service: With energy price prediction, the service could send signal to automatically dispatch extra cooling/heating, for optimising the total energy cost
 - Additional long term service: With long term data collected it is possible to suggest battery stack investments based on minimisation of energy costs in presence of storage
