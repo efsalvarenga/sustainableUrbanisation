@@ -11,6 +11,7 @@ knitr::opts_chunk$set(echo = FALSE)
 # load libraries
 library(ggplot2)
 library(dplyr)
+library(tidyr)
 ```
 
 # Agenda
@@ -25,7 +26,7 @@ library(dplyr)
 
 The project outlined here describes the high level project plan for a new digital service on the sustainable urbanisation business.
 
-The service predicts short-term (up to 7 days) energy demand for industrial business, based on the building characteristics, usage, and weather forecasts.
+The service predicts short-term (up to 7 days ahead) energy demand for industrial business, based on the building characteristics, usage, and weather forecasts.
 
 The service will be consumed by our customers through an API. We might also consider implementing a web-based UI, depending on customer feedback.
 
@@ -120,7 +121,7 @@ Possible augmentation and data imputation:
 
 - Generally weather data can be augmented with engineering variables, lags and moving averages for increased prediction power
 - Similar to the meter data, STL decomposition or ARIMA + KF could be used for imputation
-- Alternatively, if we have x,y coordinates for the site_id's we could also perform krigging with neighbour sites
+- Alternatively, if we have x,y coordinates for the site_id's we could also perform [kriging](https://en.wikipedia.org/wiki/Kriging) with neighbour sites
 
 
 # Modelling process
