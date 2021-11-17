@@ -16,13 +16,11 @@ if (!exists('buildingMetadata')) {
 
 if (!exists('buildingMeterReadings')) {
   buildingMeterReadings <- read.csv(paste0(dataFolder, 'building_meter_readings.csv'))
-  buildingMeterReadings$timestamp <- as.POSIXct(buildingMeterReadings$timestamp)
 }
 
 if (!exists('weatherData')) {
   weatherData <- read.csv(paste0(dataFolder, 'weather_data.csv'))
   weatherData <- na.roughfix(weatherData) # implementing a very rough fix
-  weatherData$timestamp <- as.POSIXct(weatherData$timestamp)
 }
 
 # consolidating meter readings from multiple meter on same building
