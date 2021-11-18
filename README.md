@@ -22,7 +22,7 @@ The service will be consumed by our customers through an API. We might also cons
 
 ## Data exploration: metadata
 
-![image info](./Slides_files/figure-html/metadataExpl-1.png)
+![image info](./images/imgMetadata.png)
 
 Notes:
 
@@ -38,7 +38,7 @@ Possible imputation:
 ## Data exploration: meter readings
 
 
-![image info](./Slides_files/figure-html/meterReadExpl-1.png)
+![image info](./images/imgMeter.png)
 
 Notes:
 
@@ -53,7 +53,7 @@ Possible augmentation and imputation:
 
 ## Data exploration: weather data
 
-image
+![image info](./images/imgWeather.png)
 
 Notes:
 
