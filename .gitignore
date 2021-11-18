@@ -37,3 +37,7 @@ vignettes/*.pdf
 
 # R Environment Variables
 .Renviron
+
+# data folder
+receivedData_DO_NOT_EDIT/
+.DS_Store
