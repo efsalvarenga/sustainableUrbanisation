@@ -47,7 +47,7 @@ ggplot(buildingMetadata, aes(x = year_built, y = square_feet)) +
   facet_wrap(~primary_use)
 ```
 
-## Data exploration: metadata notes:
+## Data exploration: metadata notes
 
 - Missing data points: either a flexible model or imputation will be required
 - Unbalanced dataset
