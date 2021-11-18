@@ -47,7 +47,7 @@ ggplot(buildingMetadata, aes(x = year_built, y = square_feet)) +
   facet_wrap(~primary_use)
 ```
 
-Notes:
+## Data exploration: metadata notes:
 
 - Missing data points: either a flexible model or imputation will be required
 - Unbalanced dataset
@@ -79,7 +79,7 @@ buildingMeterReadingsConsolidated %>%
   theme(legend.position = 'none')
 ```
 
-Notes:
+## Data exploration: meter readings notes
 
 - No missing data on current dataset, however we still need to protect against missing data for production
 - Scales varies significantly: a model that can operate on these conditions is required
@@ -113,7 +113,7 @@ weatherDataLong %>%
   facet_wrap(~variable, scales = 'free')
 ```
 
-Notes:
+## Data exploration: weather data notes
 
 - Missing data points
 
